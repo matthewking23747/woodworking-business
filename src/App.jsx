@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Trash2, Plus, FileText } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
@@ -27,7 +27,6 @@ export default function WoodworkingBusiness() {
         cost: ''
     });
 
-    // Load orders from database on mount
     useEffect(() => {
         fetchOrders();
     }, []);
@@ -38,10 +37,8 @@ export default function WoodworkingBusiness() {
                 .from('orders')
                 .select('*')
                 .order('created_at', { ascending: false });
-
             if (error) throw error;
 
-            // Transform database format to app format
             const transformedOrders = data.map(order => ({
                 id: order.id,
                 customerName: order.customer_name,
@@ -75,18 +72,18 @@ export default function WoodworkingBusiness() {
         }
     };
 
-    const handleRemoveMaterial = (id) => {
+    const handleRemoveMaterial = id => {
         setFormData(prev => ({
             ...prev,
             materials: prev.materials.filter(m => m.id !== id)
         }));
     };
 
-    const handlePdfUpload = (e) => {
+    const handlePdfUpload = e => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = event => {
                 setFormData(prev => ({
                     ...prev,
                     quotePdf: event.target.result,
@@ -97,7 +94,7 @@ export default function WoodworkingBusiness() {
         }
     };
 
-    const handleInputChange = (e) => {
+    const handleInputChange = e => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -112,7 +109,6 @@ export default function WoodworkingBusiness() {
         }
 
         try {
-            // Transform to database format
             const orderData = {
                 customer_name: formData.customerName,
                 product: formData.product,
@@ -127,28 +123,21 @@ export default function WoodworkingBusiness() {
             };
 
             if (editingId) {
-                // Update existing order
                 const { error } = await supabase
                     .from('orders')
                     .update(orderData)
                     .eq('id', editingId);
-
                 if (error) throw error;
                 alert('Order updated successfully!');
             } else {
-                // Insert new order
                 const { error } = await supabase
                     .from('orders')
                     .insert([orderData]);
-
                 if (error) throw error;
                 alert('Order created successfully!');
             }
 
-            // Refresh orders list
             await fetchOrders();
-
-            // Reset form
             setEditingId(null);
             setFormData({
                 customerName: '',
@@ -168,13 +157,13 @@ export default function WoodworkingBusiness() {
         }
     };
 
-    const handleEditOrder = (order) => {
+    const handleEditOrder = order => {
         setFormData(order);
         setEditingId(order.id);
-        setActiveTab('quotes'); // Switch to quotes tab for editing
+        setActiveTab('quotes');
     };
 
-    const handleDeleteOrder = async (id) => {
+    const handleDeleteOrder = async id => {
         if (!confirm('Are you sure you want to delete this order?')) return;
 
         try {
@@ -182,9 +171,7 @@ export default function WoodworkingBusiness() {
                 .from('orders')
                 .delete()
                 .eq('id', id);
-
             if (error) throw error;
-
             alert('Order deleted successfully!');
             await fetchOrders();
         } catch (error) {
@@ -193,13 +180,11 @@ export default function WoodworkingBusiness() {
         }
     };
 
-    const calculateMaterialsCost = () => {
-        return formData.materials.reduce((sum, m) => sum + (parseFloat(m.cost) || 0), 0).toFixed(2);
-    };
+    const calculateMaterialsCost = () =>
+        formData.materials.reduce((sum, m) => sum + (parseFloat(m.cost) || 0), 0).toFixed(2);
 
-    const totalMaterialsCostInTable = (materials) => {
-        return materials.reduce((sum, m) => sum + (parseFloat(m.cost) || 0), 0).toFixed(2);
-    };
+    const totalMaterialsCostInTable = materials =>
+        materials.reduce((sum, m) => sum + (parseFloat(m.cost) || 0), 0).toFixed(2);
 
     if (loading) {
         return (
@@ -212,11 +197,13 @@ export default function WoodworkingBusiness() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
             <div className="max-w-6xl mx-auto p-6">
+                {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-amber-900 mb-2">Woodworking Business Manager</h1>
+                    <h1 className="text-4xl font-bold text-amber-900 mb-2">🪚 Woodworking Business Manager</h1>
                     <p className="text-amber-700">Manage your quotes and deliveries in one place</p>
                 </div>
 
+                {/* Tabs */}
                 <div className="flex gap-4 mb-6 border-b-2 border-amber-200">
                     <button
                         onClick={() => setActiveTab('quotes')}
@@ -225,7 +212,7 @@ export default function WoodworkingBusiness() {
                                 : 'text-amber-700 hover:text-amber-900'
                             }`}
                     >
-                        ?? Quotes & Orders
+                        📋 Quotes & Orders
                     </button>
                     <button
                         onClick={() => setActiveTab('delivery')}
@@ -234,15 +221,18 @@ export default function WoodworkingBusiness() {
                                 : 'text-amber-700 hover:text-amber-900'
                             }`}
                     >
-                        ?? Delivery Tracker
+                        🚚 Delivery Tracker
                     </button>
                 </div>
 
+                {/* Quotes Tab */}
                 {activeTab === 'quotes' && (
                     <div className="space-y-6">
+                        {/* Create/Edit Form */}
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <h2 className="text-2xl font-bold text-amber-900 mb-6">Create/Edit Order</h2>
+                            <h2 className="text-2xl font-bold text-amber-900 mb-6">📝 Create/Edit Order</h2>
 
+                            {/* Customer & Product */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label className="block text-sm font-semibold text-amber-900 mb-2">Customer Name</label>
@@ -268,6 +258,7 @@ export default function WoodworkingBusiness() {
                                 </div>
                             </div>
 
+                            {/* Quote Checkboxes */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
@@ -277,7 +268,7 @@ export default function WoodworkingBusiness() {
                                         onChange={handleInputChange}
                                         className="w-5 h-5 text-amber-600"
                                     />
-                                    <span className="text-amber-900 font-semibold">Quote Sent</span>
+                                    <span className="text-amber-900 font-semibold">📤 Quote Sent</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
@@ -287,10 +278,11 @@ export default function WoodworkingBusiness() {
                                         onChange={handleInputChange}
                                         className="w-5 h-5 text-amber-600"
                                     />
-                                    <span className="text-amber-900 font-semibold">Quote Approved</span>
+                                    <span className="text-amber-900 font-semibold">✅ Quote Approved</span>
                                 </label>
                             </div>
 
+                            {/* PDF Upload */}
                             <div className="mb-6">
                                 <label className="block text-sm font-semibold text-amber-900 mb-2">Attach Quote PDF</label>
                                 <div className="flex items-center gap-4">
@@ -306,28 +298,29 @@ export default function WoodworkingBusiness() {
                                 </div>
                             </div>
 
+                            {/* Materials */}
                             <div className="mb-6">
-                                <h3 className="text-lg font-bold text-amber-900 mb-4">Materials (Line Items)</h3>
+                                <h3 className="text-lg font-bold text-amber-900 mb-4">🧰 Materials (Line Items)</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
                                     <input
                                         type="text"
                                         placeholder="Material/Item"
                                         value={materialInput.item}
-                                        onChange={(e) => setMaterialInput({ ...materialInput, item: e.target.value })}
+                                        onChange={e => setMaterialInput({ ...materialInput, item: e.target.value })}
                                         className="px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                                     />
                                     <input
                                         type="number"
                                         placeholder="Quantity"
                                         value={materialInput.quantity}
-                                        onChange={(e) => setMaterialInput({ ...materialInput, quantity: e.target.value })}
+                                        onChange={e => setMaterialInput({ ...materialInput, quantity: e.target.value })}
                                         className="px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                                     />
                                     <input
                                         type="number"
                                         placeholder="Cost (R)"
                                         value={materialInput.cost}
-                                        onChange={(e) => setMaterialInput({ ...materialInput, cost: e.target.value })}
+                                        onChange={e => setMaterialInput({ ...materialInput, cost: e.target.value })}
                                         step="0.01"
                                         className="px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                                     />
@@ -335,8 +328,7 @@ export default function WoodworkingBusiness() {
                                         onClick={handleAddMaterial}
                                         className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                                     >
-                                        <Plus size={18} />
-                                        Add
+                                        <Plus size={18} /> Add
                                     </button>
                                 </div>
 
@@ -378,6 +370,7 @@ export default function WoodworkingBusiness() {
                                 )}
                             </div>
 
+                            {/* Delivery */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label className="block text-sm font-semibold text-amber-900 mb-2">Delivery Address</label>
@@ -387,7 +380,7 @@ export default function WoodworkingBusiness() {
                                         onChange={handleInputChange}
                                         className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                                         placeholder="Enter delivery address"
-                                        rows="3"
+                                        rows={3}
                                     />
                                 </div>
                                 <div>
@@ -402,6 +395,7 @@ export default function WoodworkingBusiness() {
                                 </div>
                             </div>
 
+                            {/* Status */}
                             <div className="mb-6">
                                 <label className="block text-sm font-semibold text-amber-900 mb-2">Status</label>
                                 <select
@@ -410,18 +404,19 @@ export default function WoodworkingBusiness() {
                                     onChange={handleInputChange}
                                     className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                                 >
-                                    <option value="pending">Pending</option>
-                                    <option value="in progress">In Progress</option>
-                                    <option value="completed">Completed</option>
+                                    <option value="pending">⏳ Pending</option>
+                                    <option value="in progress">🚧 In Progress</option>
+                                    <option value="completed">✅ Completed</option>
                                 </select>
                             </div>
 
+                            {/* Buttons */}
                             <div className="flex gap-3">
                                 <button
                                     onClick={handleSaveOrder}
                                     className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                                 >
-                                    {editingId ? 'Update Order' : 'Create Order'}
+                                    {editingId ? 'Update Order ✏️' : 'Create Order ✅'}
                                 </button>
                                 {editingId && (
                                     <button
@@ -442,15 +437,16 @@ export default function WoodworkingBusiness() {
                                         }}
                                         className="px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors"
                                     >
-                                        Cancel
+                                        Cancel ❌
                                     </button>
                                 )}
                             </div>
                         </div>
 
+                        {/* Active Orders */}
                         {orders.length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h2 className="text-2xl font-bold text-amber-900 mb-6">Active Orders</h2>
+                                <h2 className="text-2xl font-bold text-amber-900 mb-6">📂 Active Orders</h2>
                                 <div className="space-y-4">
                                     {orders.map(order => (
                                         <div key={order.id} className="border-l-4 border-amber-600 bg-amber-50 p-5 rounded-lg">
@@ -494,10 +490,10 @@ export default function WoodworkingBusiness() {
 
                                             <div className="flex gap-2 flex-wrap mb-3">
                                                 {order.sentQuote && (
-                                                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">? Quote Sent</span>
+                                                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">📤 Quote Sent</span>
                                                 )}
                                                 {order.quoteApproved && (
-                                                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">? Quote Approved</span>
+                                                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">✅ Quote Approved</span>
                                                 )}
                                             </div>
 
@@ -506,14 +502,13 @@ export default function WoodworkingBusiness() {
                                                     onClick={() => handleEditOrder(order)}
                                                     className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold transition-colors"
                                                 >
-                                                    Edit
+                                                    Edit ✏️
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteOrder(order.id)}
                                                     className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
                                                 >
-                                                    <Trash2 size={16} />
-                                                    Delete
+                                                    <Trash2 size={16} /> Delete ❌
                                                 </button>
                                             </div>
                                         </div>
@@ -524,9 +519,10 @@ export default function WoodworkingBusiness() {
                     </div>
                 )}
 
+                {/* Delivery Tab */}
                 {activeTab === 'delivery' && (
                     <div className="bg-white rounded-lg shadow-lg p-6">
-                        <h2 className="text-2xl font-bold text-amber-900 mb-6">Delivery Tracker</h2>
+                        <h2 className="text-2xl font-bold text-amber-900 mb-6">🚚 Delivery Tracker</h2>
                         {orders.length === 0 ? (
                             <p className="text-center text-amber-700 py-8">No orders yet. Create one in the Quotes tab to track deliveries.</p>
                         ) : (
@@ -542,7 +538,7 @@ export default function WoodworkingBusiness() {
                                                 <p className="text-sm text-amber-700">{order.product}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-amber-700 text-sm">{expandedOrderId === order.id ? '? Collapse' : '? Expand'}</p>
+                                                <p className="text-amber-700 text-sm">{expandedOrderId === order.id ? '▼ Collapse' : '▶ Expand'}</p>
                                             </div>
                                         </button>
 
@@ -594,28 +590,6 @@ export default function WoodworkingBusiness() {
                                                         </a>
                                                     </div>
                                                 )}
-
-                                                <div className="flex gap-2 flex-wrap mb-4">
-                                                    {order.sentQuote && (
-                                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">? Quote Sent</span>
-                                                    )}
-                                                    {order.quoteApproved && (
-                                                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">? Quote Approved</span>
-                                                    )}
-                                                </div>
-
-                                                <div className="pt-3 border-t border-amber-200">
-                                                    <p className="text-xs text-amber-700 font-semibold uppercase mb-2">Delivery Date</p>
-                                                    <p className="text-lg font-bold text-amber-900 mb-4">{order.deliveryDate || 'Not scheduled'}</p>
-
-                                                    <p className="text-xs text-amber-700 font-semibold uppercase mb-2">Current Status</p>
-                                                    <span className={`inline-block px-4 py-2 rounded-full font-bold text-white capitalize ${order.progress === 'completed' ? 'bg-green-600' :
-                                                            order.progress === 'in progress' ? 'bg-blue-600' :
-                                                                'bg-yellow-600'
-                                                        }`}>
-                                                        {order.progress}
-                                                    </span>
-                                                </div>
                                             </div>
                                         )}
                                     </div>
