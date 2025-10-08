@@ -141,34 +141,100 @@ export default function App() {
         return materials.reduce((sum, m) => sum + parseFloat(m.cost || 0), 0).toFixed(2);
     };
 
-    const handleSaveOrder = () => {
+    // --- Save Order ---
+    const handleSaveOrder = async () => {
         if (!formData.customerName || !formData.product) {
             alert('Customer Name and Product are required.');
             return;
         }
-        if (editingId) {
-            // Update existing order
-            setOrders(prev => prev.map(o => (o.id === editingId ? { ...o, ...formData } : o)));
-            setEditingId(null);
-        } else {
-            // Create new order
-            setOrders(prev => [...prev, { ...formData, id: Date.now(), createdAt: new Date() }]);
+
+        try {
+            if (editingId) {
+                // Update existing order in Supabase
+                const { error } = await supabase
+                    .from('orders')
+                    .update({
+                        customer_name: formData.customerName,
+                        product: formData.product,
+                        sent_quote: formData.sentQuote,
+                        quote_approved: formData.quoteApproved,
+                        quote_pdf: formData.quotePdf,
+                        quote_pdf_name: formData.quotePdfName,
+                        materials: formData.materials,
+                        delivery_address: formData.deliveryAddress,
+                        delivery_date: formData.deliveryDate,
+                        progress: formData.progress,
+                        notes: formData.notes
+                    })
+                    .eq('id', editingId);
+                if (error) throw error;
+
+                // Update local state
+                setOrders(prev => prev.map(o => (o.id === editingId ? { ...o, ...formData } : o)));
+                setEditingId(null);
+            } else {
+                // Insert new order into Supabase
+                const { data, error } = await supabase
+                    .from('orders')
+                    .insert([
+                        {
+                            customer_name: formData.customerName,
+                            product: formData.product,
+                            sent_quote: formData.sentQuote,
+                            quote_approved: formData.quoteApproved,
+                            quote_pdf: formData.quotePdf,
+                            quote_pdf_name: formData.quotePdfName,
+                            materials: formData.materials,
+                            delivery_address: formData.deliveryAddress,
+                            delivery_date: formData.deliveryDate,
+                            progress: formData.progress,
+                            notes: formData.notes,
+                            created_at: new Date()
+                        }
+                    ])
+                    .select();
+                if (error) throw error;
+
+                // Add to local state with returned Supabase ID
+                setOrders(prev => [...prev, {
+                    id: data[0].id,
+                    customerName: data[0].customer_name,
+                    product: data[0].product,
+                    sentQuote: data[0].sent_quote,
+                    quoteApproved: data[0].quote_approved,
+                    quotePdf: data[0].quote_pdf,
+                    quotePdfName: data[0].quote_pdf_name,
+                    materials: data[0].materials,
+                    deliveryAddress: data[0].delivery_address,
+                    deliveryDate: data[0].delivery_date,
+                    progress: data[0].progress,
+                    notes: data[0].notes,
+                    createdAt: data[0].created_at
+                }]);
+            }
+
+            // Reset form
+            setFormData({
+                customerName: '',
+                product: '',
+                sentQuote: false,
+                quoteApproved: false,
+                quotePdf: null,
+                quotePdfName: '',
+                materials: [],
+                deliveryAddress: '',
+                deliveryDate: '',
+                progress: 'pending',
+                notes: ''
+            });
+
+        } catch (error) {
+            console.error('Error saving order:', error);
+            alert('Error saving order: ' + error.message);
         }
-        setFormData({
-            customerName: '',
-            product: '',
-            sentQuote: false,
-            quoteApproved: false,
-            quotePdf: null,
-            quotePdfName: '',
-            materials: [],
-            deliveryAddress: '',
-            deliveryDate: '',
-            progress: 'pending',
-            notes: ''
-        });
     };
 
+    // --- Edit Order ---
     const handleEditOrder = (order) => {
         setEditingId(order.id);
         setFormData({
@@ -186,9 +252,27 @@ export default function App() {
         });
     };
 
-    const handleDeleteOrder = (id) => {
-        setOrders(prev => prev.filter(o => o.id !== id));
+    // --- Delete Order ---
+    const handleDeleteOrder = async (id) => {
+        if (!confirm('Are you sure you want to delete this order?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+
+            // Remove from local state
+            setOrders(prev => prev.filter(o => o.id !== id));
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            alert('Error deleting order: ' + error.message);
+        }
     };
+
+    // --- Password Gate Render ---
+
 
     // --- Password Gate Render ---
     if (!isAuthenticated) {
