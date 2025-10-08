@@ -39,6 +39,26 @@ export default function App() {
     });
     const [materialInput, setMaterialInput] = useState({ item: '', quantity: '', cost: '' });
 
+    // --- Delivery Date Color Helper ---
+    // <-- PUT THIS HERE, after your state declarations
+    const getDeliveryDateStyles = (deliveryDate) => {
+        if (!deliveryDate) return 'bg-gray-300 text-gray-800'; // No date set
+
+        const today = new Date();
+        const delivery = new Date(deliveryDate);
+
+        // ✅ Compare only calendar dates (ignore hours/minutes)
+        today.setHours(0, 0, 0, 0);
+        delivery.setHours(0, 0, 0, 0);
+
+        const diffTime = delivery - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) return 'bg-red-600 text-white';     // today or past = red
+        if (diffDays <= 3) return 'bg-orange-500 text-white';  // within 3 days = orange
+        return 'bg-green-600 text-white';                      // later = green
+    };
+
     // --- Fetch Orders ---
     useEffect(() => {
         if (isAuthenticated) fetchOrders();
@@ -568,24 +588,38 @@ export default function App() {
                                             onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
                                             className="w-full border-2 border-amber-200 rounded-lg p-4 hover:border-amber-400 hover:bg-amber-50 transition-colors text-left flex justify-between items-center"
                                         >
-                                            <div>
-                                                {/* Order Created Date */}
-                                                <p className="text-xs text-black mb-1">
-                                                    Created: {new Date(order.createdAt).toLocaleDateString()}
-                                                </p>
+                                            <div className="w-full">
+                                                {/* Dates */}
+                                                <div className="flex justify-between mb-1 text-xs text-black w-full">
+                                                    <span>Created: {new Date(order.createdAt).toLocaleDateString()}</span>
+
+                                                    {/* Delivery Date Bubble */}
+                                                    <span
+                                                        className={`text-right px-3 py-1 rounded-full text-sm font-medium shadow-sm border border-gray-200 ${getDeliveryDateStyles(order.deliveryDate)}`}
+                                                    >
+                                                        Delivery: {order.deliveryDate
+                                                            ? new Date(order.deliveryDate).toLocaleDateString()
+                                                            : 'Not set'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Customer and Status */}
                                                 <p className="text-lg font-bold text-amber-900">
                                                     {order.customerName} —{' '}
                                                     <span
                                                         className={`capitalize font-semibold ${order.progress === 'pending'
-                                                            ? 'text-orange-500'
-                                                            : order.progress === 'in progress'
-                                                                ? 'text-blue-600'
-                                                                : 'text-green-600'
+                                                                ? 'text-orange-500'
+                                                                : order.progress === 'in progress'
+                                                                    ? 'text-blue-600'
+                                                                    : 'text-green-600'
                                                             }`}
                                                     >
                                                         {order.progress}
                                                     </span>
                                                 </p>
+
+
+                                                {/* Product */}
                                                 <p className="text-sm text-amber-700">{order.product}</p>
                                             </div>
                                             <div className="text-right">
