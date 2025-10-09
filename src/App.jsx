@@ -106,14 +106,40 @@ export default function App() {
         }));
     };
 
-    const handlePdfUpload = (e) => {
+    const handlePdfUpload = async (e) => {
         const file = e.target.files[0];
-        if (file) {
+        if (!file) return;
+
+        try {
+            // Make filename unique using timestamp
+            const fileName = `${Date.now()}_${file.name}`;
+
+            // Upload the file to the public 'quotes' bucket
+            const { error: uploadError } = await supabase
+                .storage
+                .from('quotes')
+                .upload(fileName, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Get the public URL for everyone to access
+            const { data, error: urlError } = supabase
+                .storage
+                .from('quotes')
+                .getPublicUrl(fileName);
+
+            if (urlError) throw urlError;
+
+            // Save the public URL in your formData
             setFormData(prev => ({
                 ...prev,
-                quotePdf: URL.createObjectURL(file),
+                quotePdf: data.publicUrl,
                 quotePdfName: file.name
             }));
+
+        } catch (error) {
+            console.error('Error uploading PDF:', error);
+            alert('Error uploading PDF: ' + error.message);
         }
     };
 
@@ -649,8 +675,9 @@ export default function App() {
                                                 <div className="mb-4 flex items-center gap-2 bg-white p-3 rounded">
                                                     <FileText size={18} className="text-blue-600" />
                                                     <a
-                                                        href={order.quotePdf}
-                                                        download={order.quotePdfName}
+                                                        href={order.quotePdf}                // public URL
+                                                        target="_blank"                       // open in new tab
+                                                        rel="noopener noreferrer"
                                                         className="text-blue-600 hover:text-blue-800 underline font-semibold"
                                                     >
                                                         {order.quotePdfName}
@@ -795,8 +822,9 @@ export default function App() {
                                                     <div className="mb-4 flex items-center gap-2 bg-white p-3 rounded">
                                                         <FileText size={18} className="text-blue-600" />
                                                         <a
-                                                            href={order.quotePdf}
-                                                            download={order.quotePdfName}
+                                                            href={order.quotePdf}                // public URL
+                                                            target="_blank"                       // open in new tab
+                                                            rel="noopener noreferrer"
                                                             className="text-blue-600 hover:text-blue-800 underline font-semibold"
                                                         >
                                                             {order.quotePdfName}
