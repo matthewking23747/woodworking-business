@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Trash2, Plus, FileText } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
@@ -37,6 +37,9 @@ export default function App() {
         progress: 'pending',
         notes: ''
     });
+    // --- ADD THIS LINE HERE ---
+    const fileInputRef = useRef(null);
+
     const [materialInput, setMaterialInput] = useState({ item: '', quantity: '', cost: '' });
 
     // --- Delivery Date Color Helper ---
@@ -176,7 +179,7 @@ export default function App() {
 
         try {
             if (editingId) {
-                // Update existing order in Supabase
+                // Update existing order...
                 const { error } = await supabase
                     .from('orders')
                     .update({
@@ -195,33 +198,29 @@ export default function App() {
                     .eq('id', editingId);
                 if (error) throw error;
 
-                // Update local state
                 setOrders(prev => prev.map(o => (o.id === editingId ? { ...o, ...formData } : o)));
                 setEditingId(null);
             } else {
-                // Insert new order into Supabase
+                // Insert new order...
                 const { data, error } = await supabase
                     .from('orders')
-                    .insert([
-                        {
-                            customer_name: formData.customerName,
-                            product: formData.product,
-                            sent_quote: formData.sentQuote,
-                            quote_approved: formData.quoteApproved,
-                            quote_pdf: formData.quotePdf,
-                            quote_pdf_name: formData.quotePdfName,
-                            materials: formData.materials,
-                            delivery_address: formData.deliveryAddress,
-                            delivery_date: formData.deliveryDate,
-                            progress: formData.progress,
-                            notes: formData.notes,
-                            created_at: new Date()
-                        }
-                    ])
+                    .insert([{
+                        customer_name: formData.customerName,
+                        product: formData.product,
+                        sent_quote: formData.sentQuote,
+                        quote_approved: formData.quoteApproved,
+                        quote_pdf: formData.quotePdf,
+                        quote_pdf_name: formData.quotePdfName,
+                        materials: formData.materials,
+                        delivery_address: formData.deliveryAddress,
+                        delivery_date: formData.deliveryDate,
+                        progress: formData.progress,
+                        notes: formData.notes,
+                        created_at: new Date()
+                    }])
                     .select();
                 if (error) throw error;
 
-                // Add to local state with returned Supabase ID
                 setOrders(prev => [...prev, {
                     id: data[0].id,
                     customerName: data[0].customer_name,
@@ -239,7 +238,7 @@ export default function App() {
                 }]);
             }
 
-            // Reset form
+            // --- Reset form fully after saving ---
             setFormData({
                 customerName: '',
                 product: '',
@@ -253,6 +252,9 @@ export default function App() {
                 progress: 'pending',
                 notes: ''
             });
+
+            // --- CLEAR FILE INPUT FOR BOTH NEW AND EDIT ---
+            if (fileInputRef.current) fileInputRef.current.value = '';
 
         } catch (error) {
             console.error('Error saving order:', error);
@@ -430,6 +432,7 @@ export default function App() {
                                         type="file"
                                         accept=".pdf"
                                         onChange={handlePdfUpload}
+                                        ref={fileInputRef}   // <-- add this line
                                         className="flex-1 px-4 py-2 border border-amber-300 rounded-lg"
                                     />
                                     {formData.quotePdfName && (
@@ -600,6 +603,7 @@ export default function App() {
                                     <button
                                         onClick={() => {
                                             setEditingId(null);
+                                            // Reset form fully after saving
                                             setFormData({
                                                 customerName: '',
                                                 product: '',
@@ -611,8 +615,12 @@ export default function App() {
                                                 deliveryAddress: '',
                                                 deliveryDate: '',
                                                 progress: 'pending',
-                                                notes: formData.notes
+                                                notes: ''
                                             });
+                                            if (fileInputRef.current) fileInputRef.current.value = '';
+
+                                            // Clear the file input
+                                            if (fileInputRef.current) fileInputRef.current.value = '';
                                         }}
                                         className="px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors"
                                     >
