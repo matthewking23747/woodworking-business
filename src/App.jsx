@@ -313,8 +313,8 @@ export default function App() {
             <div className="max-w-6xl mx-auto p-6">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-amber-900 mb-2">🪚 Woodworking Business Manager</h1>
-                    <p className="text-amber-700">Manage your quotes and deliveries in one place</p>
+                    <h1 className="text-4xl font-bold text-amber-900 mb-2">🪚 Custom Wood Creations Business Manager</h1>
+                    <p className="text-amber-700">Handcrafted Quality | Custom Furniture | For Real Homes and Real People</p>
                 </div>
 
                 {/* Tabs */}
@@ -509,14 +509,41 @@ export default function App() {
                                 </div>
                             </div>
                             <div className="mb-6">
-                                <label className="block text-sm font-semibold text-amber-900 mb-2">Notes</label>
+                                {/* Notes */}
+                                <label className="block text-sm font-semibold text-gray-700">Notes</label>
                                 <textarea
                                     name="notes"
                                     value={formData.notes}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                    placeholder="Add any notes for this order"
-                                    rows={3}
+                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    onFocus={() => {
+                                        // When focused and empty, start with "1. "
+                                        if (!formData.notes.trim()) {
+                                            setFormData({ ...formData, notes: '1. ' });
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const lines = formData.notes.split('\n');
+                                            const lastLine = lines[lines.length - 1];
+                                            const match = lastLine.match(/^(\d+)\.\s/);
+                                            let nextNumber = 1;
+
+                                            if (match) {
+                                                nextNumber = parseInt(match[1]) + 1;
+                                            } else if (lines.length > 0 && lastLine.trim() !== '') {
+                                                nextNumber = lines.length + 1;
+                                            }
+
+                                            setFormData({
+                                                ...formData,
+                                                notes: formData.notes + `\n${nextNumber}. `,
+                                            });
+                                        }
+                                    }}
+                                    className="w-full p-2 border border-gray-300 rounded mt-1"
+                                    rows="3"
+                                    placeholder="Enter notes..."
                                 />
                             </div>
 
@@ -604,7 +631,11 @@ export default function App() {
                                             {order.notes && (
                                                 <div className="mb-3 p-3 bg-white rounded">
                                                     <p className="text-xs text-amber-700 font-semibold uppercase mb-1">Notes</p>
-                                                    <p className="text-amber-900">{order.notes}</p>
+                                                    <p
+                                                        className="text-amber-900 whitespace-pre-line"
+                                                    >
+                                                        {order.notes}
+                                                    </p>
                                                 </div>
                                             )}
 
@@ -776,7 +807,11 @@ export default function App() {
                                                 {order.notes && (
                                                     <div className="mb-4 p-3 bg-white rounded">
                                                         <p className="text-xs text-amber-700 font-semibold uppercase mb-1">Notes</p>
-                                                        <p className="text-amber-900">{order.notes}</p>
+                                                        <p
+                                                            className="text-amber-900 whitespace-pre-line"
+                                                        >
+                                                            {order.notes}
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
