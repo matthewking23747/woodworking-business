@@ -560,7 +560,7 @@ export default function App() {
                                 : 'text-amber-700 hover:text-amber-900'
                             }`}
                     >
-                        🧾 PDF Generator
+                        🧾 Quote Generator
                     </button>
                 </div>
 
