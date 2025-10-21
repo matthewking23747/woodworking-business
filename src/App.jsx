@@ -50,6 +50,70 @@ export default function App() {
         contactPhone: '0810394506',
         bankDetails: 'Bank: FNB\nACC: 62768032121',
     });
+    // --- Wood Price Calculator States ---
+    const [woodTypes, setWoodTypes] = useState([]);        // all wood types from Supabase
+    const [selectedWood, setSelectedWood] = useState('');  // selected wood type
+    const [selectedThickness, setSelectedThickness] = useState(''); // selected thickness
+    const [calculatedPrice, setCalculatedPrice] = useState(null);   // calculated price
+    // --- Additional Calculator States ---
+    const [lengthInput, setLengthInput] = useState('');
+    const [widthInput, setWidthInput] = useState('');
+    const [thicknessInput, setThicknessInput] = useState('');
+    const [squareMetersInput, setSquareMetersInput] = useState('');
+
+    const [piecesNeeded, setPiecesNeeded] = useState(0);
+    const [totalVolume, setTotalVolume] = useState(0);
+    const [subtotal, setSubtotal] = useState(0);
+    const [vat, setVat] = useState(0);
+    const [totalCost, setTotalCost] = useState(0);
+
+    useEffect(() => {
+        async function fetchWoodData() {
+            const { data, error } = await supabase
+                .from('solid_timber_prices_wide')
+                .select('*');
+            console.log('Wood data:', data, 'Error:', error);  // <--- debug
+            if (!error && data) setWoodTypes(data);
+        }
+        fetchWoodData();
+    }, []);
+
+    const handleCalculatePrice = () => {
+        if (!selectedWood || !selectedThickness) {
+            alert('Please select both wood type and thickness.');
+            return;
+        }
+
+        const wood = woodTypes.find((w) => w.wood_type === selectedWood);
+        if (!wood) return;
+
+        const pricePerM3 = parseFloat(wood[selectedThickness]);
+        if (!pricePerM3) return;
+
+        // Parse user inputs
+        const length = parseFloat(lengthInput) || 1; // meters
+        const width = parseFloat(widthInput) || 1;
+        const thickness = parseFloat(thicknessInput) || 0.025; // meters
+        const squareMetersNeeded = parseFloat(squareMetersInput) || 1;
+
+        // Calculations
+        const areaPerPiece = length * width;
+        const pieces = Math.ceil(squareMetersNeeded / areaPerPiece);
+        const volumePerPiece = length * width * thickness;
+        const totalVol = volumePerPiece * pieces;
+        const subTotal = totalVol * pricePerM3;
+        const vatAmount = subTotal * 0.15;
+        const total = subTotal + vatAmount;
+
+        // Update state
+        setCalculatedPrice(pricePerM3);      // Price per m³
+        setPiecesNeeded(pieces);
+        setTotalVolume(totalVol);
+        setSubtotal(subTotal);
+        setVat(vatAmount);
+        setTotalCost(total);
+    };
+
     // --- Logo Helper (add here, inside component but outside generatePDF) ---
     const fetchLogoBase64 = async () => {
         const res = await fetch('/CWC Logo.png'); // path to your image in public folder
@@ -561,6 +625,15 @@ export default function App() {
                             }`}
                     >
                         🧾 Quote Generator
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('calculator')}
+                        className={`px-6 py-3 font-semibold transition-colors ${activeTab === 'calculator'
+                                ? 'text-amber-900 border-b-2 border-amber-900'
+                                : 'text-amber-700 hover:text-amber-900'
+                            }`}
+                    >
+                        🪵 Wood Price Calculator
                     </button>
                 </div>
 
@@ -1194,6 +1267,139 @@ export default function App() {
                         </button>
                     </div>
                 )}
+                {/* Wood Price Calculator Tab */}
+                {activeTab === 'calculator' && (
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-amber-900 mb-6">🪵 Wood Price Calculator</h2>
+
+                        {/* Select Wood Type */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-semibold text-amber-900 mb-2">Wood Type</label>
+                            <select
+                                value={selectedWood}
+                                onChange={(e) => setSelectedWood(e.target.value)}
+                                className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                            >
+                                <option value="">Select wood type</option>
+                                {woodTypes.map((wood) => (
+                                    <option key={wood.wood_type} value={wood.wood_type}>
+                                        {wood.wood_type}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Select Thickness */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-semibold text-amber-900 mb-2">Thickness (mm)</label>
+                            <select
+                                value={selectedThickness}
+                                onChange={(e) => setSelectedThickness(e.target.value)}
+                                className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                            >
+                                <option value="">Select thickness</option>
+                                {['mm_25', 'mm_38', 'mm_50', 'mm_75'].map((thick) => {
+                                    const wood = woodTypes.find((w) => w.wood_type === selectedWood);
+                                    const price = wood ? wood[thick] : null;
+                                    return (
+                                        <option key={thick} value={thick} disabled={price === null}>
+                                            {thick.replace('mm_', '')}mm {price === null ? '(N/A)' : ''}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </div>
+
+                        {/* Input fields for calculation */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-amber-900 mb-2">Length (m)</label>
+                                <input
+                                    type="number"
+                                    step="0.001"
+                                    value={lengthInput}
+                                    onChange={(e) => setLengthInput(e.target.value)}
+                                    className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-amber-900 mb-2">Width (m)</label>
+                                <input
+                                    type="number"
+                                    step="0.001"
+                                    value={widthInput}
+                                    onChange={(e) => setWidthInput(e.target.value)}
+                                    className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-amber-900 mb-2">Thickness (m)</label>
+                                <input
+                                    type="number"
+                                    step="0.001"
+                                    value={thicknessInput}
+                                    onChange={(e) => setThicknessInput(e.target.value)}
+                                    className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-amber-900 mb-2">Square Meters Needed</label>
+                                <input
+                                    type="number"
+                                    step="0.001"
+                                    value={squareMetersInput}
+                                    onChange={(e) => setSquareMetersInput(e.target.value)}
+                                    className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Calculate Button */}
+                        <button
+                            onClick={handleCalculatePrice}
+                            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                        >
+                            Calculate 💰
+                        </button>
+
+                        {/* Display Calculations */}
+                        {calculatedPrice !== null && (
+                            <div className="mt-6 bg-white rounded-lg shadow-md p-6 space-y-3 border border-amber-200">
+                                <h3 className="text-xl font-bold text-amber-900 mb-4">Calculation Summary</h3>
+
+                                <div className="flex justify-between">
+                                    <span>Price per m³:</span>
+                                    <span>R{calculatedPrice.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Pieces Needed:</span>
+                                    <span>{piecesNeeded}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Total Volume:</span>
+                                    <span>{totalVolume.toFixed(4)} m³</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Subtotal:</span>
+                                    <span>R{subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>VAT (15%):</span>
+                                    <span>R{vat.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold border-t border-amber-200 pt-2">
+                                    <span>Total Cost:</span>
+                                    <span>R{totalCost.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold border-t border-amber-200 pt-2 text-amber-800">
+                                    <span>Rounded Total Cost:</span>
+                                    <span>R{Math.ceil(totalCost / 100) * 100}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                     </div>
                 
 
