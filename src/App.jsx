@@ -1294,19 +1294,24 @@ export default function App() {
                             <label className="block text-sm font-semibold text-amber-900 mb-2">Thickness (mm)</label>
                             <select
                                 value={selectedThickness}
-                                onChange={(e) => setSelectedThickness(e.target.value)}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSelectedThickness(value);
+
+                                    // Automatically update the thickness input in meters
+                                    if (value === "mm_25") setThicknessInput("0.025");
+                                    else if (value === "mm_38") setThicknessInput("0.038");
+                                    else if (value === "mm_50") setThicknessInput("0.050");
+                                    else if (value === "mm_75") setThicknessInput("0.075");
+                                    else setThicknessInput("");
+                                }}
                                 className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                             >
                                 <option value="">Select thickness</option>
-                                {['mm_25', 'mm_38', 'mm_50', 'mm_75'].map((thick) => {
-                                    const wood = woodTypes.find((w) => w.wood_type === selectedWood);
-                                    const price = wood ? wood[thick] : null;
-                                    return (
-                                        <option key={thick} value={thick} disabled={price === null}>
-                                            {thick.replace('mm_', '')}mm {price === null ? '(N/A)' : ''}
-                                        </option>
-                                    );
-                                })}
+                                <option value="mm_25">25mm</option>
+                                <option value="mm_38">38mm</option>
+                                <option value="mm_50">50mm</option>
+                                <option value="mm_75">75mm</option>
                             </select>
                         </div>
 
