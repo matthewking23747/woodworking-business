@@ -864,16 +864,37 @@ export default function App() {
                             {/* Buttons */}
                             <div className="flex gap-3">
                                 <button
-                                    onClick={handleSaveOrder}
+                                    onClick={() => {
+                                        handleSaveOrder(); // Save or update the order
+
+                                        // ✅ Reset form after saving/creating order
+                                        setEditingId(null);
+                                        setFormData({
+                                            customerName: '',
+                                            product: '',
+                                            sentQuote: false,
+                                            quoteApproved: false,
+                                            quotePdf: null,
+                                            quotePdfName: '',
+                                            materials: [], // completely clears materials table
+                                            deliveryAddress: '',
+                                            deliveryDate: '',
+                                            progress: 'pending',
+                                            notes: '',
+                                        });
+                                        setMaterialInput({ item: '', quantity: '', cost: '' }); // clears the top add-material input row
+                                        if (fileInputRef.current) fileInputRef.current.value = ''; // clears the file input
+                                    }}
                                     className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                                 >
                                     {editingId ? 'Update Order ✏️' : 'Create Order ✅'}
                                 </button>
+
                                 {editingId && (
                                     <button
                                         onClick={() => {
                                             setEditingId(null);
-                                            // Reset form fully after saving
+                                            // ✅ Reset form on cancel
                                             setFormData({
                                                 customerName: '',
                                                 product: '',
@@ -885,11 +906,9 @@ export default function App() {
                                                 deliveryAddress: '',
                                                 deliveryDate: '',
                                                 progress: 'pending',
-                                                notes: ''
+                                                notes: '',
                                             });
-                                            if (fileInputRef.current) fileInputRef.current.value = '';
-
-                                            // Clear the file input
+                                            setMaterialInput({ item: '', quantity: '', cost: '' });
                                             if (fileInputRef.current) fileInputRef.current.value = '';
                                         }}
                                         className="px-6 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors"
@@ -943,9 +962,33 @@ export default function App() {
                                                 </div>
                                             )}
 
+                                            {/* Materials Table */}
+                                            {/* Materials Table */}
                                             {order.materials.length > 0 && (
                                                 <div className="mb-4 bg-white p-3 rounded">
-                                                    <p className="text-sm font-semibold text-amber-900 mb-2">Materials Total: R{totalMaterialsCostInTable(order.materials)}</p>
+                                                    <p className="text-sm font-semibold text-amber-900 mb-2">Materials</p>
+                                                    <table className="w-full text-sm border-t border-b border-amber-200">
+                                                        <thead>
+                                                            <tr className="border-b border-amber-200">
+                                                                <th className="text-left py-2 px-3 font-semibold text-amber-900">Item</th>
+                                                                <th className="text-center py-2 px-3 font-semibold text-amber-900">Qty</th>
+                                                                <th className="text-right py-2 px-3 font-semibold text-amber-900">Cost</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {order.materials.map(m => (
+                                                                <tr key={m.id} className="border-b border-amber-100">
+                                                                    <td className="py-2 px-3">{m.item}</td>
+                                                                    <td className="text-center py-2 px-3">{m.quantity}</td>
+                                                                    <td className="text-right py-2 px-3">R{parseFloat(m.cost).toFixed(2)}</td>
+                                                                </tr>
+                                                            ))}
+                                                            <tr className="font-bold bg-amber-100">
+                                                                <td colSpan="2" className="py-2 px-3 text-right">Total:</td>
+                                                                <td className="text-right py-2 px-3">R{totalMaterialsCostInTable(order.materials)}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             )}
 
@@ -1011,14 +1054,23 @@ export default function App() {
                                             <div className="w-full">
                                                 {/* Dates */}
                                                 <div className="flex justify-between mb-1 text-xs text-black w-full">
-                                                    <span>Created: {new Date(order.createdAt).toLocaleDateString()}</span>
+                                                    {/* Created Date */}
+                                                    <span>
+                                                        Created: {new Date(order.createdAt).toLocaleDateString('en-GB')}
+                                                        {/* Total Price */}
+                                                        <span className="ml-3 text-lg font-bold text-amber-900">
+                                                            R{order.materials && order.materials.length > 0
+                                                                ? totalMaterialsCostInTable(order.materials)
+                                                                : '0.00'}
+                                                        </span>
+                                                    </span>
 
                                                     {/* Delivery Date Bubble */}
                                                     <span
                                                         className={`text-right px-3 py-1 rounded-full text-sm font-medium shadow-sm border border-gray-200 ${getDeliveryDateStyles(order.deliveryDate)}`}
                                                     >
                                                         Delivery: {order.deliveryDate
-                                                            ? new Date(order.deliveryDate).toLocaleDateString()
+                                                            ? new Date(order.deliveryDate).toLocaleDateString('en-GB')
                                                             : 'Not set'}
                                                     </span>
                                                 </div>
