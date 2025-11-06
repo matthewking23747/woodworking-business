@@ -497,12 +497,25 @@ export default function App() {
             const price = parseFloat(item.price || 0);
             total += price;
 
-            doc.rect(startX, startY, tableWidth, rowHeight); // row border
-            doc.line(startX + colDescriptionWidth, startY, startX + colDescriptionWidth, startY + rowHeight); // vertical line
-            doc.text(item.description, startX + 2, startY + 7);
-            doc.text(price.toFixed(2), startX + tableWidth - 2, startY + 7, { align: 'right' });
+            // Wrap long text inside the description cell
+            const description = item.description || '';
+            const wrappedText = doc.splitTextToSize(description, colDescriptionWidth - 4); // leave padding
+            const linesCount = wrappedText.length;
+            const currentRowHeight = rowHeight * linesCount; // adjust height dynamically
 
-            startY += rowHeight;
+            // Draw row border (adjust height)
+            doc.rect(startX, startY, tableWidth, currentRowHeight);
+            doc.line(startX + colDescriptionWidth, startY, startX + colDescriptionWidth, startY + currentRowHeight);
+
+            // Add wrapped text inside description column
+            doc.text(wrappedText, startX + 2, startY + 6);
+
+            // Price (aligned to right, vertically centered)
+            const priceY = startY + 6;
+            doc.text(price.toFixed(2), startX + tableWidth - 2, priceY, { align: 'right' });
+
+            // Move Y down by full row height for next line item
+            startY += currentRowHeight;
         });
 
         // --- Grand Total ---
