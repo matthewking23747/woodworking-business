@@ -447,17 +447,22 @@ export default function App() {
         doc.setTextColor('#000000');
 
         // Client name (left)
-        doc.text(`Client Name: ${clientName}`, startX, startY);
+        const clientLines = doc.splitTextToSize(clientName, tableWidth - 60); // a bit narrower to leave space for date
+        const clientNameY = startY;
+        doc.text(clientLines, startX, clientNameY);
 
-        // Date (right)
+        // Date (right) — stays in line with top of client name
         const currentDate = new Date().toLocaleDateString('en-GB', {
             day: '2-digit',
             month: 'long',
             year: 'numeric'
         });
-        doc.text(`Date: ${currentDate}`, startX + tableWidth, startY, { align: 'right' });
+        doc.text(`Date: ${currentDate}`, startX + tableWidth, clientNameY, { align: 'right' });
 
-        startY += 8;
+        // Move down only after both are printed
+        startY += clientLines.length * 6 + 8;
+
+        // Product below
         doc.text(`Product Description: ${product}`, startX, startY);
         startY += 8;
 
@@ -465,6 +470,7 @@ export default function App() {
             doc.text(`Notes: ${notes}`, startX, startY);
             startY += 8;
         }
+
         startY += 5;
 
         // --- Table Header ---
@@ -1206,12 +1212,12 @@ export default function App() {
                                 <label className="block text-sm font-semibold text-amber-900 mb-2">
                                     Client Name
                                 </label>
-                                <input
-                                    type="text"
+                                <textarea
                                     value={pdfForm.clientName}
                                     onChange={(e) => setPdfForm({ ...pdfForm, clientName: e.target.value })}
                                     placeholder="Enter client name"
                                     className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                    rows={2} // you can adjust this
                                 />
                             </div>
                             <div>
