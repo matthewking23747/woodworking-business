@@ -578,13 +578,16 @@ export default function App() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50">
                 <h1 className="text-2xl font-bold text-amber-900 mb-4">Enter Password</h1>
-                <form onSubmit={handlePasswordSubmit}>
+                <form
+                    onSubmit={handlePasswordSubmit}
+                    className="flex flex-col items-center w-full max-w-xs"
+                >
                     <input
                         type="password"
                         value={enteredPassword}
                         onChange={(e) => setEnteredPassword(e.target.value)}
                         placeholder="Password"
-                        className="px-4 py-2 border border-amber-300 rounded mb-3 w-64 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="px-4 py-2 border border-amber-300 rounded mb-3 w-full focus:outline-none focus:ring-2 focus:ring-amber-500 text-center"
                     />
                     <button
                         type="submit"
